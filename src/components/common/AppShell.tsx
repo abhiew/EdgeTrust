@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Role } from '../../types';
 import { DemoDataBanner } from './DemoDataBanner';
+import { RoleSwitcher } from './RoleSwitcher';
 import {
   LayoutDashboard,
   Bot,
@@ -16,11 +16,9 @@ import {
   HelpCircle,
   Search,
   Bell,
-  ChevronDown,
-  UserCheck,
   Menu,
   X,
-  ExternalLink
+  Sparkles
 } from 'lucide-react';
 
 interface AppShellProps {
@@ -38,22 +36,23 @@ export const AppShell: React.FC<AppShellProps> = ({
   pageTitle,
   pageSubtitle,
 }) => {
-  const { user, activeRole, setActiveRole, logout } = useAuth();
+  const { user } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const rolesList: Role[] = [
-    'CEO',
-    'COO',
-    'Operations Manager',
-    'Compliance Manager',
-    'AI Product Manager',
-    'Collection Agent',
-    'Admin',
-  ];
+  // Close mobile menu on ESC
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+        setNotificationsOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const navItems = [
     { id: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -83,7 +82,76 @@ export const AppShell: React.FC<AppShellProps> = ({
       <DemoDataBanner />
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar */}
+        {/* Mobile Navigation Drawer Overlay */}
+        {mobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 md:hidden animate-slide-up"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <div
+              className="w-64 bg-slate-900 h-full border-r border-slate-800 p-4 flex flex-col justify-between"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-mono font-bold text-white text-sm">
+                      ET
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-white text-sm">EdgeTrust</h2>
+                      <p className="text-[10px] text-blue-400 font-mono">CONTROL TOWER</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <nav className="space-y-1">
+                  {navItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = currentRoute === item.id || (item.id !== '/dashboard' && currentRoute.startsWith(item.id));
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          onNavigate(item.id);
+                          setMobileMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                          isActive
+                            ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 font-semibold'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
+                          <span>{item.label}</span>
+                        </div>
+                        {item.badge && (
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300">
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+
+              <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800 text-[11px] text-slate-400">
+                <p className="font-semibold text-slate-300">Sandbox Mode</p>
+                <p className="text-[10px]">100% Synthetic NBFC Data</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Left Desktop Sidebar */}
         <aside
           className={`${
             sidebarCollapsed ? 'w-20' : 'w-64'
@@ -127,7 +195,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                   onClick={() => onNavigate(item.id)}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
                     isActive
-                      ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-sm'
+                      ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-sm font-semibold'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                   }`}
                   title={item.label}
@@ -184,6 +252,7 @@ export const AppShell: React.FC<AppShellProps> = ({
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800"
+                aria-label="Toggle mobile menu"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
@@ -226,41 +295,8 @@ export const AppShell: React.FC<AppShellProps> = ({
                 Aug 01, 2026 – Aug 13, 2026
               </div>
 
-              {/* Role Switcher Pill */}
-              <div className="relative">
-                <button
-                  onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-950/60 border border-blue-500/40 text-blue-300 text-xs font-medium hover:bg-blue-900/60 transition-colors shadow-sm"
-                  title="Switch Role for Demo Review"
-                >
-                  <UserCheck className="w-3.5 h-3.5 text-blue-400" />
-                  <span className="font-semibold">{activeRole}</span>
-                  <ChevronDown className="w-3 h-3 text-blue-400" />
-                </button>
-
-                {roleDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-2 z-50 text-xs animate-slide-up">
-                    <div className="px-3 py-1.5 border-b border-slate-800 text-[10px] font-mono text-slate-400">
-                      SELECT DEMO ROLE (RBAC VIEW)
-                    </div>
-                    {rolesList.map((role) => (
-                      <button
-                        key={role}
-                        onClick={() => {
-                          setActiveRole(role);
-                          setRoleDropdownOpen(false);
-                        }}
-                        className={`w-full px-3 py-2 text-left flex items-center justify-between hover:bg-slate-800 transition-colors ${
-                          activeRole === role ? 'text-blue-400 font-semibold bg-blue-950/40' : 'text-slate-300'
-                        }`}
-                      >
-                        <span>{role}</span>
-                        {activeRole === role && <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Role Switcher */}
+              <RoleSwitcher />
 
               {/* Notification Center */}
               <div className="relative">

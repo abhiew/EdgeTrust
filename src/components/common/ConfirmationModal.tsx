@@ -1,5 +1,6 @@
-import React from 'react';
-import { AlertTriangle, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { AlertTriangle, ShieldAlert, CheckCircle2, X } from 'lucide-react';
+import { Button } from './Button';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -24,11 +25,40 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   icon = 'warning',
   isLoading = false,
 }) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && !isLoading) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, isLoading, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-slide-up">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirmation-modal-title"
+      aria-describedby="confirmation-modal-description"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-slide-up"
+    >
+      <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4 relative">
+        <button
+          onClick={onClose}
+          disabled={isLoading}
+          aria-label="Close dialog"
+          className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
         <div className="flex items-start gap-4">
           <div
             className={`p-3 rounded-xl shrink-0 ${
@@ -43,9 +73,13 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             {icon === 'shield' && <ShieldAlert className="w-6 h-6" />}
             {icon === 'check' && <CheckCircle2 className="w-6 h-6" />}
           </div>
-          <div className="space-y-1">
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
-            <p className="text-sm text-slate-300 leading-relaxed">{description}</p>
+          <div className="space-y-1 pr-6">
+            <h3 id="confirmation-modal-title" className="text-base font-semibold text-white">
+              {title}
+            </h3>
+            <p id="confirmation-modal-description" className="text-xs text-slate-300 leading-relaxed">
+              {description}
+            </p>
           </div>
         </div>
 
@@ -55,31 +89,17 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors"
-          >
+          <Button variant="secondary" size="sm" onClick={onClose} disabled={isLoading}>
             Cancel
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant={confirmVariant}
+            size="sm"
             onClick={onConfirm}
-            disabled={isLoading}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-lg shadow-lg flex items-center gap-2 transition-colors ${
-              confirmVariant === 'danger'
-                ? 'bg-red-600 hover:bg-red-500 shadow-red-600/20'
-                : confirmVariant === 'warning'
-                ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/20'
-                : 'bg-blue-600 hover:bg-blue-500 shadow-blue-600/20'
-            }`}
+            isLoading={isLoading}
           >
-            {isLoading ? (
-              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-            ) : null}
             {confirmText}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
