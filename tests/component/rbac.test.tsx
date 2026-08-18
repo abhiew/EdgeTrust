@@ -28,7 +28,7 @@ describe('2. Role-Based Access Control (RBAC) & Role Selection', () => {
     expect(screen.getByText(/SELECT DEMO ROLE \(RBAC VIEW\)/i)).toBeInTheDocument();
 
     // Select CEO
-    const ceoOption = screen.getByRole('button', { name: /^CEO$/i });
+    const ceoOption = screen.getByRole('option', { name: /CEO/i });
     fireEvent.click(ceoOption);
 
     // Role pill now displays CEO
